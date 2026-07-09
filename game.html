@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abi  MEME Mines</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; }
+
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff6b6b 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+.game-container {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(60px) saturate(180%);
+    -webkit-backdrop-filter: blur(60px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 40px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    max-width: 500px;
+    width: 100%;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  h1 {
+    text-align: center;
+    color: white;
+    font-size: 36px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    color: white;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+.cell {
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.2s;
+  }
+.cell:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+.cell.revealed { background: rgba(255, 255, 255, 0.25); cursor: default; }
+.cell.bomb { background: rgba(255, 0, 0, 0.3); }
+.cell img { width: 70%; height: 70%; object-fit: contain; animation: popIn 0.3s ease; }
+
+  @keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+  /* BOMB POPUP */
+.meme-popup {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(30px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+
+.meme-box {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(60px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    padding: 25px;
+    text-align: center;
+    animation: pop 0.4s ease;
+    max-width: 400px;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+.meme-box img {
+    width: 100%;
+    border-radius: 20px;
+    margin-bottom: 15px;
+  }
+
+.meme-box h2 { color: white; margin-bottom: 10px; font-size: 24px; }
+.btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 16px;
+  }
+.btn:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<div class="game-container">
+  <h1>💣 ABI MEME MINES</h1>
+  <div class="stats">
+    <span>Score: <span id="score">0</span></span>
+    <span>Bombs: <span id="bombs">6</span></span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <button class="btn" onclick="resetGame()" style="width:100%;">New Game</button>
+</div>
+
+<!-- BOMB POPUP - PIC MO DITO -->
+<div class="meme-popup" id="memePopup">
+  <div class="meme-box">
+    <h2>BAKIT TULOG ANG BESHHY KOOO 😱</h>
+      <img src="ab.jpeg">
+    <button class="btn" onclick="closeMeme()">Try Again</button>
+  </div>
+</div>
+
+<script>
+  const gridSize = 5;
+  const bombCount = 6;
+
+  let grid = [];
+  let score = 0;
+  let gameOver = false;
+
+  function initGame() {
+    grid = [];
+    score = 0;
+    gameOver = false;
+    document.getElementById('score').innerText = 0;
+
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+
+    // Create cells
+    for(let i = 0; i < gridSize * gridSize; i++) {
+      grid.push({ bomb: false, revealed: false });
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      cell.onclick = () => revealCell(i);
+      gridEl.appendChild(cell);
+    }
+
+    // Place bombs randomly - FIXED ITO
+    let bombsPlaced = 0;
+    while(bombsPlaced < bombCount) {
+      let rand = Math.floor(Math.random() * gridSize * gridSize);
+      if(!grid[rand].bomb) { // FIX: dapat grid[rand].bomb
+        grid[rand].bomb = true;
+        bombsPlaced++;
+      }
+    }
+  }
+
+  function revealCell(index) {
+    if(gameOver || grid[index].revealed) return;
+
+    grid[index].revealed = true;
+    const cell = document.querySelector(`[data-index='${index}']`);
+    cell.classList.add('revealed');
+
+    if(grid[index].bomb) { // FIX: dapat grid[index].bomb
+      // BOOM! Show bomb icon sa cell
+      cell.classList.add('bomb');
+      cell.innerHTML = '<img src="bomb.jpg">';
+      gameOver = true;
+      setTimeout(showMeme, 300); // delay para makita muna bomb
+
+    } else {
+      // Safe - Check icon
+      cell.innerHTML = '<img src="A.jpg">';
+      score++;
+      document.getElementById('score').innerText = score;
+
+      if(score === gridSize * gridSize - bombCount) {
+        setTimeout(() => alert("YOU WIN! 🎉"), 300);
+        gameOver = true;
+      }
+    }
+  }
+
+  function showMeme() {
+    document.getElementById('memePopup').style.display = 'flex';
+  }
+
+  function closeMeme() {
+    document.getElementById('memePopup').style.display = 'none';
+  }
+
+  function resetGame() {
+    closeMeme();
+    initGame();
+  }
+
+  initGame();
+</script>
+
+</body>
+</html>
